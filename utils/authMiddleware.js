@@ -55,7 +55,7 @@ const authenticateJWT = async (req, res, next) => {
 
                     // Генерация нового accessToken
                     const newAccessToken = jwt.sign(
-                        { id: dbUser.id, permissions: dbUser.permissions },
+                        { id: dbUser.id, roles: dbUser.roles },
                         process.env.JWT_SECRET,
                         { expiresIn: '1h' }
                     );
@@ -66,7 +66,7 @@ const authenticateJWT = async (req, res, next) => {
                     // Добавляем пользователя в req.user и продолжаем
                     req.user = {
                         id: dbUser.id,
-                        permissions: dbUser.permissions,
+                        roles: dbUser.roles,
                     };
                     return next();
                 } catch (refreshErr) {

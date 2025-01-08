@@ -18,9 +18,10 @@ const userSchema = new mongoose.Schema(
             required: true,
             unique: true,
         },
-        permissions: {
+        roles: {
             type: [String],
-            default: ['user'],
+            enum: ['admin', 'moderator', 'user'], // Возможные роли
+            default: ['user'], // Роль по умолчанию
         },
         refreshToken: {
             type: [String],

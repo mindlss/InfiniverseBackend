@@ -4,9 +4,9 @@ const DiscordStrategy = require('passport-discord').Strategy;
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-const generateAccessToken = (id, permissions) => {
+const generateAccessToken = (id, roles) => {
     return jwt.sign(
-        { id: id, permissions: permissions },
+        { id: id, roles: roles },
         process.env.JWT_SECRET,
         {
             expiresIn: '3h',
@@ -42,7 +42,7 @@ passport.use(
 
                 const accessToken = generateAccessToken(
                     user.id,
-                    user.permissions
+                    user.roles
                 ); // Генерация Access Token
                 const refreshToken = generateRefreshToken(user.id); // Генерация Refresh Token
 
