@@ -1,28 +1,23 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-undef */
 const jwt = require('jsonwebtoken');
-const User = require('../models/User'); // Импорт модели пользователя
+const User = require('../models/User');
 const BlacklistedToken = require('../models/BlacklistedToken');
 
 const authenticateJWT = async (req, res, next) => {
     try {
-        // Извлекаем токен из хедера Authorization или тела запроса
         const authHeader = req.headers.authorization;
         const token = authHeader ? authHeader.split(' ')[1] : req.body.token;
 
         if (!token) {
             return res.status(401).json({ message: 'Токен не предоставлен' });
         }
-
         const blacklistedToken = await BlacklistedToken.findOne({ token });
         if (blacklistedToken) {
-            return res
-                .status(401)
-                .json({
-                    message: 'Токен отозван, требуется повторная авторизация',
-                });
+            return res.status(401).json({
+                message: 'Токен отозван, требуется повторная авторизация',
+            });
         }
-
         // Проверяем токен
         jwt.verify(token, process.env.JWT_SECRET, async (err, user) => {
             if (err && err.name === 'TokenExpiredError') {
@@ -30,12 +25,9 @@ const authenticateJWT = async (req, res, next) => {
                 const { refreshToken } = req.body;
 
                 if (!refreshToken) {
-                    return res
-                        .status(401)
-                        .json({
-                            message:
-                                'Токен истёк, Refresh Token не предоставлен',
-                        });
+                    return res.status(401).json({
+                        message: 'Токен истёк, Refresh Token не предоставлен',
+                    });
                 }
 
                 try {
@@ -53,9 +45,8 @@ const authenticateJWT = async (req, res, next) => {
                             .json({ message: 'Неверный Refresh Token' });
                     }
 
-                    // Генерация нового accessToken
                     const newAccessToken = jwt.sign(
-                        { id: dbUser.id, roles: dbUser.roles },
+                        { id: dbUser.id },
                         process.env.JWT_SECRET,
                         { expiresIn: '1h' }
                     );
@@ -66,7 +57,6 @@ const authenticateJWT = async (req, res, next) => {
                     // Добавляем пользователя в req.user и продолжаем
                     req.user = {
                         id: dbUser.id,
-                        roles: dbUser.roles,
                     };
                     return next();
                 } catch (refreshErr) {
@@ -82,7 +72,7 @@ const authenticateJWT = async (req, res, next) => {
             }
 
             // Если токен валиден
-            req.user = user; // Данные из токена
+            req.user = user;
             next();
         });
     } catch (error) {

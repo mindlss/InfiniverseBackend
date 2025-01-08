@@ -4,14 +4,10 @@ const DiscordStrategy = require('passport-discord').Strategy;
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
-const generateAccessToken = (id, roles) => {
-    return jwt.sign(
-        { id: id, roles: roles },
-        process.env.JWT_SECRET,
-        {
-            expiresIn: '3h',
-        }
-    );
+const generateAccessToken = (id) => {
+    return jwt.sign({ id: id }, process.env.JWT_SECRET, {
+        expiresIn: '3h',
+    });
 };
 
 const generateRefreshToken = (id) => {
@@ -40,11 +36,8 @@ passport.use(
                     });
                 }
 
-                const accessToken = generateAccessToken(
-                    user.id,
-                    user.roles
-                ); // Генерация Access Token
-                const refreshToken = generateRefreshToken(user.id); // Генерация Refresh Token
+                const accessToken = generateAccessToken(user.id); // Генерация Access Token
+                const refreshToken = generateRefreshToken(user.id);
 
                 // Обновление `refreshToken` в базе
                 user.refreshToken = refreshToken;

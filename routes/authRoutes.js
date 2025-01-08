@@ -62,7 +62,7 @@ router.post('/refresh', async (req, res) => {
 
         // Генерация нового Access Token
         const newAccessToken = jwt.sign(
-            { id: user.id, roles: user.roles },
+            { id: user.id },
             process.env.JWT_SECRET,
             { expiresIn: '3h' }
         );
