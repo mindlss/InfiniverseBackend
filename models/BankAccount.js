@@ -6,11 +6,7 @@ const bankAccountSchema = new mongoose.Schema(
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
             required: function () {
-                return (
-                    this.accountType !== 'country' &&
-                    this.accountType !== 'town' &&
-                    this.accountType !== 'party'
-                );
+                return this.issuedByModel == 'User';
             },
         },
         balance: {
@@ -24,16 +20,14 @@ const bankAccountSchema = new mongoose.Schema(
             ref: 'Currency',
             required: true,
         },
-        accountType: {
-            type: String,
-            required: true,
-            enum: ['debit', 'credit', 'business', 'town', 'country', 'party'],
-            default: 'debit',
-        },
         issuedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Country',
             required: true,
+        },
+        issuedByModel: {
+            type: String,
+            required: true,
+            enum: ['User', 'Country', 'City', 'Party', 'Business'],
         },
     },
     {
@@ -49,7 +43,7 @@ const bankAccountSchema = new mongoose.Schema(
  */
 bankAccountSchema.methods.updateBalance = async function (amount) {
     if (this.balance + amount < 0) {
-        throw new Error('Insufficient funds'); // Проверка на недостаток средств
+        throw new Error('Insufficient funds');
     }
     this.balance += amount;
     await this.save();

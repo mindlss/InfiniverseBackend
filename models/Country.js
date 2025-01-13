@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const City = require('../models/City');
 
 const countrySchema = new mongoose.Schema(
     {
@@ -33,7 +34,6 @@ const countrySchema = new mongoose.Schema(
 countrySchema.methods.createCity = async function (cityName) {
     const City = mongoose.model('City');
 
-    // Создаём новый город, привязываем его к текущей стране
     const newCity = new City({
         name: cityName,
         country: this._id,
@@ -41,7 +41,13 @@ countrySchema.methods.createCity = async function (cityName) {
 
     await newCity.save();
 
-    return newCity;
+    var newCityAccount = null;
+
+    if (this.currency) {
+        newCityAccount = await newCity.createCityAccount(this.currency);
+    }
+
+    return { city: newCity, cityAccount: newCityAccount };
 };
 
 /**
@@ -55,40 +61,47 @@ countrySchema.methods.issueCurrency = async function (name, symbol) {
     const Currency = mongoose.model('Currency');
     const BankAccount = mongoose.model('BankAccount');
 
-    // Проверяем, есть ли у страны уже валюта
     if (this.currency) {
         throw new Error('Country already has a currency.');
     }
 
-    // Проверяем, не существует ли валюта с таким символом
     const existingCurrency = await Currency.findOne({ symbol });
     if (existingCurrency) {
         throw new Error('Currency with this symbol already exists.');
     }
 
-    // Создаём новую валюту
     const newCurrency = new Currency({
         name,
         symbol,
-        issuedBy: this._id, // Ссылка на страну, которая выпускает валюту
+        issuedBy: this._id,
     });
 
     await newCurrency.save();
 
-    // Привязываем валюту к стране
     this.currency = newCurrency._id;
     await this.save();
 
-    // Создаём банковский счёт (казну) для страны с этой валютой
     const newAccount = new BankAccount({
-        currency: newCurrency._id,  // Валюта страны
-        accountType: 'country',  // Тип счёта — казна
-        issuedBy: this._id,  // Ссылка на страну
+        currency: newCurrency._id,
+        issuedBy: this._id,
+        issuedByModel: 'Country',
     });
 
     await newAccount.save();
 
-    return { currency: newCurrency, treasury: newAccount }; // Возвращаем валюту и казну
+    const cities = await City.find({ country: this._id });
+
+    const cityAccounts = [];
+    for (const city of cities) {
+        const cityAccount = await city.createCityAccount(newCurrency._id);
+        cityAccounts.push(cityAccount);
+    }
+
+    return {
+        currency: newCurrency,
+        countryAccount: newAccount,
+        cityAccounts: cityAccounts,
+    };
 };
 
 /**
@@ -113,28 +126,6 @@ countrySchema.methods.setCapital = async function (cityId) {
     await this.save();
 
     return this.capital;
-};
-
-/**
- * Выпускает новый банковский счёт для пользователя в стране.
- * @param {mongoose.Schema.Types.ObjectId} userId - Идентификатор пользователя, которому принадлежит счёт.
- * @param {string} accountType - Тип счёта (например, 'debit', 'business').
- * @returns {Promise<Object>} - Возвращает объект нового банковского счёта.
- */
-countrySchema.methods.issueBankAccount = async function (userId, accountType = 'debit') {
-    const BankAccount = mongoose.model('BankAccount');
-
-    // Создаём новый банковский счёт для пользователя в валюте страны
-    const newAccount = new BankAccount({
-        userId: userId,
-        currency: this.currency, // Валюта страны
-        accountType: accountType,
-        issuedBy: this._id, // Ссылка на страну
-    });
-
-    await newAccount.save();
-
-    return newAccount;
 };
 
 const Country = mongoose.model('Country', countrySchema);

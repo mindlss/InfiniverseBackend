@@ -8,10 +8,8 @@ const Currency = require('../models/Currency');
 const Country = require('../models/Country');
 const City = require('../models/City');
 
-
 router.get('/testCountry', authenticateJWT, async (req, res) => {
     try {
-
         const newCountry = new Country({
             name: 'prikol',
             leader: req.user.id,
@@ -27,8 +25,8 @@ router.get('/testCountry', authenticateJWT, async (req, res) => {
 router.get('/testCity', authenticateJWT, async (req, res) => {
     try {
         const country = await Country.findOne({ name: 'prikol' });
-        const newCity = await country.createCity('ebengrad');
-        
+        const newCity = await country.createCity('ebengrad2');
+
         res.json(newCity);
     } catch (err) {
         console.log(err);
@@ -40,7 +38,7 @@ router.get('/testCurrency', authenticateJWT, async (req, res) => {
     try {
         const country = await Country.findOne({ name: 'prikol' });
         const newCurrency = await country.issueCurrency('denga', 'DNG');
-        
+
         res.json(newCurrency);
     } catch (err) {
         console.log(err);
@@ -52,7 +50,7 @@ router.get('/testAccount', authenticateJWT, async (req, res) => {
     try {
         const country = await Country.findOne({ name: 'prikol' });
         const newAccount = await country.issueBankAccount(req.user.id, 'debit');
-        
+
         res.json(newAccount);
     } catch (err) {
         console.log(err);
@@ -60,19 +58,24 @@ router.get('/testAccount', authenticateJWT, async (req, res) => {
     }
 });
 
-router.get('/accounts', authenticateJWT, rolesHasAny(['user']), async (req, res) => {
-    try {
-        const accounts = await BankAccount.find({ userId: req.user._id });
-        res.json(accounts);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка получения счетов' });
+router.get(
+    '/accounts',
+    authenticateJWT,
+    rolesHasAny(['user']),
+    async (req, res) => {
+        try {
+            const accounts = await BankAccount.find({ userId: req.user._id });
+            res.json(accounts);
+        } catch (err) {
+            res.status(500).json({ error: 'Ошибка получения счетов' });
+        }
     }
-});
+);
 
 router.post(
     '/accounts',
     authenticateJWT,
-    rolesHasAny(['user']), // Только пользователи с ролью 'user' могут создавать счёт
+    rolesHasAny(['user']),
     async (req, res) => {
         try {
             const newAccount = new BankAccount({
@@ -88,20 +91,25 @@ router.post(
 );
 
 // Получить конкретный счёт
-router.get('/accounts/:id', authenticateJWT, rolesHasAny(['user']), async (req, res) => {
-    try {
-        const account = await BankAccount.findOne({
-            _id: req.params.id,
-            userId: req.user._id,
-        });
-        if (!account) {
-            return res.status(404).json({ error: 'Счёт не найден' });
+router.get(
+    '/accounts/:id',
+    authenticateJWT,
+    rolesHasAny(['user']),
+    async (req, res) => {
+        try {
+            const account = await BankAccount.findOne({
+                _id: req.params.id,
+                userId: req.user._id,
+            });
+            if (!account) {
+                return res.status(404).json({ error: 'Счёт не найден' });
+            }
+            res.json(account);
+        } catch (err) {
+            res.status(500).json({ error: 'Ошибка получения счёта' });
         }
-        res.json(account);
-    } catch (err) {
-        res.status(500).json({ error: 'Ошибка получения счёта' });
     }
-});
+);
 
 // Обновить баланс счета
 router.patch(
