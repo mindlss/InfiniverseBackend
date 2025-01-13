@@ -4,6 +4,61 @@ const router = express.Router();
 const authenticateJWT = require('../utils/authMiddleware');
 const { rolesHasAny } = require('../utils/roleMiddleware');
 const BankAccount = require('../models/BankAccount');
+const Currency = require('../models/Currency');
+const Country = require('../models/Country');
+const City = require('../models/City');
+
+
+router.get('/testCountry', authenticateJWT, async (req, res) => {
+    try {
+
+        const newCountry = new Country({
+            name: 'prikol',
+            leader: req.user.id,
+        });
+        await newCountry.save();
+        res.json(newCountry);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Ошибка' });
+    }
+});
+
+router.get('/testCity', authenticateJWT, async (req, res) => {
+    try {
+        const country = await Country.findOne({ name: 'prikol' });
+        const newCity = await country.createCity('ebengrad');
+        
+        res.json(newCity);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Ошибка' });
+    }
+});
+
+router.get('/testCurrency', authenticateJWT, async (req, res) => {
+    try {
+        const country = await Country.findOne({ name: 'prikol' });
+        const newCurrency = await country.issueCurrency('denga', 'DNG');
+        
+        res.json(newCurrency);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Ошибка' });
+    }
+});
+
+router.get('/testAccount', authenticateJWT, async (req, res) => {
+    try {
+        const country = await Country.findOne({ name: 'prikol' });
+        const newAccount = await country.issueBankAccount(req.user.id, 'debit');
+        
+        res.json(newAccount);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Ошибка' });
+    }
+});
 
 router.get('/accounts', authenticateJWT, rolesHasAny(['user']), async (req, res) => {
     try {
