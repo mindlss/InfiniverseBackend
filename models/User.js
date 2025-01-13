@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema(
             default: ['user'], // Роль по умолчанию
         },
         refreshToken: {
-            type: [String],
+            type: String,
             default: null,
         },
     },
