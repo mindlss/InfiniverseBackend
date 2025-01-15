@@ -4,17 +4,18 @@ const router = express.Router();
 const authenticateJWT = require('../utils/authMiddleware');
 const { rolesHasAny } = require('../utils/roleMiddleware');
 const BankAccount = require('../models/BankAccount');
-const Currency = require('../models/Currency');
-const Country = require('../models/Country');
-const City = require('../models/City');
+
+const countryService = require('../services/countryService');
+const bankAccountService = require('../services/bankAccountService');
 
 router.get('/testCountry', authenticateJWT, async (req, res) => {
     try {
-        const newCountry = new Country({
+        const countryData = {
             name: 'prikol',
             leader: req.user.id,
-        });
-        await newCountry.save();
+        };
+
+        const newCountry = await countryService.createCountry(countryData);
         res.json(newCountry);
     } catch (err) {
         console.log(err);
@@ -24,8 +25,8 @@ router.get('/testCountry', authenticateJWT, async (req, res) => {
 
 router.get('/testCity', authenticateJWT, async (req, res) => {
     try {
-        const country = await Country.findOne({ name: 'prikol' });
-        const newCity = await country.createCity('ebengrad2');
+        const country = await countryService.find('prikol');
+        const newCity = await countryService.createCity(country.id, 'ebengrad2');
 
         res.json(newCity);
     } catch (err) {
@@ -36,8 +37,8 @@ router.get('/testCity', authenticateJWT, async (req, res) => {
 
 router.get('/testCurrency', authenticateJWT, async (req, res) => {
     try {
-        const country = await Country.findOne({ name: 'prikol' });
-        const newCurrency = await country.issueCurrency('denga', 'DNG');
+        const country = await countryService.find('prikol');
+        const newCurrency = await countryService.issueCurrency(country.id, 'denga', 'DNG');
 
         res.json(newCurrency);
     } catch (err) {
@@ -48,8 +49,12 @@ router.get('/testCurrency', authenticateJWT, async (req, res) => {
 
 router.get('/testAccount', authenticateJWT, async (req, res) => {
     try {
-        const country = await Country.findOne({ name: 'prikol' });
-        const newAccount = await country.issueBankAccount(req.user.id, 'debit');
+        const country = await countryService.find('prikol');
+        const newAccount = await bankAccountService.createBankAccount({
+            issuedBy: country.id,
+            issuedByModel: 'Country',
+            currencyId: country.currency,
+        });
 
         res.json(newAccount);
     } catch (err) {
