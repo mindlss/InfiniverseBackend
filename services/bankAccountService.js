@@ -10,8 +10,13 @@ const Currency = require('../models/Currency');
  * @param {Number} [data.balance=0] - Начальный баланс счета (по умолчанию 0).
  * @returns {Promise<Object>} Возвращает созданный банковский счет.
  */
-const createBankAccount = async ({ issuedBy, issuedByModel, currencyId, balance = 0 }) => {
-    console.log({currencyId: currencyId});
+const createBankAccount = async ({
+    issuedBy,
+    issuedByModel,
+    currencyId,
+    balance = 0,
+}) => {
+    console.log({ currencyId: currencyId });
     // Проверяем, существует ли валюта
     const currency = await Currency.findById(currencyId);
     if (!currency) {
@@ -98,4 +103,10 @@ const getAllAccounts = async () => {
     return accounts;
 };
 
-module.exports = { createBankAccount, getAccountByUser, deposit, withdraw, getAllAccounts };
+module.exports = {
+    createBankAccount,
+    getAccountByUser,
+    deposit,
+    withdraw,
+    getAllAccounts,
+};

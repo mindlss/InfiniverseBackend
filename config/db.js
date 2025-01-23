@@ -1,15 +1,12 @@
-/* eslint-disable no-undef */
 const mongoose = require('mongoose');
+const logger = require('../utils/logger');
 
 const connectDB = async () => {
     try {
-        const conn = await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-        });
-        console.log(`MongoDB подключен: ${conn.connection.host}`);
+        const conn = await mongoose.connect(process.env.MONGO_URI, {});
+        logger.info(`MongoDB connected: ${conn.connection.host}`);
     } catch (error) {
-        console.error(`Ошибка подключения: ${error.message}`);
+        logger.error(`Ошибка подключения: ${error.message}`);
         process.exit(1);
     }
 };
