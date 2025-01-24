@@ -1,4 +1,5 @@
 const City = require('../models/City');
+const User = require('../models/User');
 
 /**
  * Найти город по ID
@@ -6,7 +7,7 @@ const City = require('../models/City');
  * @returns {Promise<Object>} Данные города
  */
 const getCityById = async (cityId) => {
-    const city = await City.findById(cityId).populate('country');
+    const city = await City.findById(cityId).populate('country').populate('users');
     if (!city) {
         throw new Error('Город не найден');
     }
@@ -19,7 +20,7 @@ const getCityById = async (cityId) => {
  * @returns {Promise<Object>} Данные города
  */
 const getCityByName = async (cityName) => {
-    const city = await City.findOne({ name: cityName }).populate('country');
+    const city = await City.findOne({ name: cityName }).populate('country').populate('users');
     if (!city) {
         throw new Error('Город с таким именем не найден');
     }
@@ -32,7 +33,7 @@ const getCityByName = async (cityName) => {
  * @returns {Promise<Array>} Список городов страны
  */
 const getCitiesByCountry = async (countryId) => {
-    const cities = await City.find({ country: countryId }).populate('country');
+    const cities = await City.find({ country: countryId }).populate('country').populate('users');
     return cities;
 };
 
@@ -54,7 +55,7 @@ const createCity = async (cityData) => {
  * @returns {Promise<Object>} Обновленный город
  */
 const updateCity = async (cityId, updates) => {
-    const city = await City.findByIdAndUpdate(cityId, updates, { new: true }).populate('country');
+    const city = await City.findByIdAndUpdate(cityId, updates, { new: true }).populate('country').populate('users');
     if (!city) {
         throw new Error('Город не найден для обновления');
     }
@@ -79,20 +80,72 @@ const deleteCity = async (cityId) => {
  * @returns {Promise<Array>} Список городов
  */
 const getAllCities = async () => {
-    const cities = await City.find().populate('country');
+    const cities = await City.find().populate('country').populate('users');
     return cities;
 };
 
 /**
- * Создать банковский счёт для города
+ * Добавить игрока в город
  * @param {String} cityId - ID города
- * @param {String} currencyId - ID валюты (опционально)
- * @returns {Promise<Object>} Созданный банковский счёт
+ * @param {String} userId - ID пользователя
+ * @returns {Promise<Object>} Обновленный город
  */
-const createCityAccount = async (cityId, currencyId = null) => {
-    const city = await getCityById(cityId);
-    const account = await city.createCityAccount(currencyId);
-    return account;
+const addUserToCity = async (cityId, userId) => {
+    const city = await City.findById(cityId);
+    if (!city) {
+        throw new Error('Город не найден');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error('Пользователь не найден');
+    }
+
+    // Добавляем игрока в город, если его там нет
+    if (!city.users.includes(userId)) {
+        city.users.push(userId);
+        await city.save();
+    }
+
+    return city;
+};
+
+/**
+ * Удалить игрока из города
+ * @param {String} cityId - ID города
+ * @param {String} userId - ID пользователя
+ * @returns {Promise<Object>} Обновленный город
+ */
+const removeUserFromCity = async (cityId, userId) => {
+    const city = await City.findById(cityId);
+    if (!city) {
+        throw new Error('Город не найден');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new Error('Пользователь не найден');
+    }
+
+    // Удаляем игрока из города
+    city.users = city.users.filter(id => id.toString() !== userId);
+    await city.save();
+
+    return city;
+};
+
+/**
+ * Получить всех игроков города
+ * @param {String} cityId - ID города
+ * @returns {Promise<Array>} Список игроков города
+ */
+const getUsersInCity = async (cityId) => {
+    const city = await City.findById(cityId).populate('users');
+    if (!city) {
+        throw new Error('Город не найден');
+    }
+
+    return city.users;
 };
 
 module.exports = {
@@ -103,5 +156,7 @@ module.exports = {
     updateCity,
     deleteCity,
     getAllCities,
-    createCityAccount,
+    addUserToCity,
+    removeUserFromCity,
+    getUsersInCity,
 };

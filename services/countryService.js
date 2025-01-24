@@ -1,8 +1,8 @@
 const Country = require('../models/Country');
 const Currency = require('../models/Currency');
-
 const cityService = require('./cityService');
 const bankAccountService = require('./bankAccountService');
+const User = require('../models/User');
 
 /**
  * Создаёт новую страну.
@@ -135,10 +135,42 @@ async function find(value) {
     return await Country.findOne({ name: value });
 }
 
+/**
+ * Получает всех игроков всех городов страны.
+ * @param {string} countryId - ID страны.
+ * @returns {Promise<Array>} Список всех игроков страны.
+ */
+async function getAllUsersInCountry(countryId) {
+    const country = await Country.findById(countryId);
+    if (!country) {
+        throw new Error('Country not found.');
+    }
+
+    const cities = await cityService.getCitiesByCountry(country._id);
+    let users = [];
+
+    // Для каждого города получаем игроков и добавляем их в общий список
+    for (const city of cities) {
+        const cityUsers = await cityService.getUsersInCity(city._id);
+        users = users.concat(cityUsers);
+    }
+
+    // Убираем дубликаты игроков
+    users = [...new Set(users.map(user => user._id.toString()))];
+
+    // Получаем полные данные об игроках
+    const fullUsers = await User.find({
+        _id: { $in: users }
+    });
+
+    return fullUsers;
+}
+
 module.exports = {
     createCountry,
     createCity,
     issueCurrency,
     setCapital,
     find,
+    getAllUsersInCountry,
 };

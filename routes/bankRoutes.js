@@ -7,6 +7,32 @@ const BankAccount = require('../models/BankAccount');
 
 const countryService = require('../services/countryService');
 const bankAccountService = require('../services/bankAccountService');
+const roleService = require('../services/roleService');
+
+router.get('/testRole', async (req, res) => {
+    try {
+        const roleData = {
+            name: 'prikol',
+            description: 'krytaya rol!!',
+        };
+
+        const newRole = await roleService.createRole(roleData)
+        res.json(newRole);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Ошибка' });
+    }
+});
+
+router.get('/testPermissions', async (req, res) => {
+    try {
+        const permissions = await roleService.getAllPermissions();
+        res.json(permissions);
+    } catch (err) {
+        console.log(err);
+        res.status(500).json({ error: 'Ошибка' });
+    }
+});
 
 router.get('/testCountry', authenticateJWT, async (req, res) => {
     try {
